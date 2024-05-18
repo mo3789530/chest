@@ -1,140 +1,30 @@
 package log
 
 import (
-	"errors"
-
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+	"log/slog"
+	"os"
 )
 
-type EncodingType string
-
-const (
-	JSONEncoding     EncodingType = "json"
-	ConsoleEncoding  EncodingType = "console"
-	HumanizeEncoding EncodingType = "humanize"
-)
-
-const (
-	DefaultLevel    = "info"
-	DefaultEncoding = HumanizeEncoding
-)
-
-var (
-	DefaultConfigs = Configs{
-		Level:    DefaultLevel,
-		Encoding: DefaultEncoding,
-	}
-)
-
-type Configs struct {
-	Level          string
-	Encoding       EncodingType
-	ServiceContext *ServiceContext
+func NewLogger() {
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 }
 
-func NewLogger(c Configs) (*zap.Logger, error) {
-	level := new(zapcore.Level)
-	if err := level.Set(c.Level); err != nil {
-		return nil, err
-	}
-	var options []zap.Option
-	if c.ServiceContext != nil && c.Encoding != HumanizeEncoding {
-		options = []zap.Option{
-			zap.Fields(zap.Object("serviceContext", c.ServiceContext)),
-		}
-	}
-	logger, err := newConfig(*level, c.Encoding).Build(options...)
-	if err != nil {
-		return nil, err
-	}
-	if c.ServiceContext != nil {
-		return logger.Named(c.ServiceContext.Service), nil
-	}
-	return logger, nil
+func NewTextLogger() {
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, nil)))
 }
 
-func newConfig(level zapcore.Level, encoding EncodingType) zap.Config {
-	c := zap.Config{
-		Level:       zap.NewAtomicLevelAt(level),
-		Development: false,
-		Sampling: &zap.SamplingConfig{
-			Initial:    100,
-			Thereafter: 100,
-		},
-		EncoderConfig:    newEncoderConfig(encoding),
-		OutputPaths:      []string{"stderr"},
-		ErrorOutputPaths: []string{"stderr"},
-	}
-	if encoding == HumanizeEncoding {
-		c.Encoding = string(ConsoleEncoding)
-		c.DisableCaller = true
-	} else {
-		c.Encoding = string(encoding)
-	}
-	return c
+func Info(msg string, args ...any) {
+	slog.Info(msg, args...)
 }
 
-func newEncoderConfig(encoding EncodingType) zapcore.EncoderConfig {
-	if encoding == HumanizeEncoding {
-		return zapcore.EncoderConfig{
-			TimeKey:        "eventTime",
-			LevelKey:       "",
-			NameKey:        "",
-			CallerKey:      "",
-			MessageKey:     "message",
-			StacktraceKey:  "stacktrace",
-			LineEnding:     zapcore.DefaultLineEnding,
-			EncodeLevel:    encodeLevel,
-			EncodeDuration: zapcore.SecondsDurationEncoder,
-			EncodeCaller:   zapcore.ShortCallerEncoder,
-		}
-	}
-
-	return zapcore.EncoderConfig{
-		TimeKey:        "eventTime",
-		LevelKey:       "severity",
-		NameKey:        "logger",
-		CallerKey:      "caller",
-		MessageKey:     "message",
-		StacktraceKey:  "stacktrace",
-		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    encodeLevel,
-		EncodeTime:     zapcore.EpochTimeEncoder,
-		EncodeDuration: zapcore.SecondsDurationEncoder,
-		EncodeCaller:   zapcore.ShortCallerEncoder,
-	}
+func Error(msg string, args ...any) {
+	slog.Error(msg, args...)
 }
 
-func encodeLevel(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
-	switch l {
-	case zapcore.DebugLevel:
-		enc.AppendString("DEBUG")
-	case zapcore.InfoLevel:
-		enc.AppendString("INFO")
-	case zapcore.WarnLevel:
-		enc.AppendString("WARNING")
-	case zapcore.ErrorLevel:
-		enc.AppendString("ERROR")
-	case zapcore.DPanicLevel:
-		enc.AppendString("CRITICAL")
-	case zapcore.PanicLevel:
-		enc.AppendString("ALERT")
-	case zapcore.FatalLevel:
-		enc.AppendString("EMERGENCY")
-	}
+func Warn(msg string, args ...any) {
+	slog.Warn(msg, args...)
 }
 
-type ServiceContext struct {
-	Service string
-	Version string
-}
-
-func (sc ServiceContext) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	if sc.Service == "" {
-		return errors.New("service name is mandatory")
-	}
-	enc.AddString("service", sc.Service)
-	enc.AddString("version", sc.Version)
-	return nil
+func Debug(msg string, args ...any) {
+	slog.Debug(msg, args...)
 }

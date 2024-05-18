@@ -2,11 +2,11 @@
 # see: https://developers.google.com/idx/guides/customize-idx-env
 { pkgs, ... }: {
   # Which nixpkgs channel to use.
-  channel = "stable-23.11"; # or "unstable"
+  channel =  "unstable";# "stable-23.11"; # or "unstable"
   # Use https://search.nixos.org/packages to find packages
   packages = [
     pkgs.go
-    pkgs.nodejs_20
+    pkgs.nodejs_22
     pkgs.nodePackages.nodemon
   ];
   # Sets environment variables in the workspace
@@ -18,7 +18,7 @@
     ];
     # Enable previews and customize configuration
     previews = {
-      enable = true;
+      enable = false;
       previews = {
         web = {
           command = [
