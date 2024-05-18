@@ -1,12 +1,13 @@
 /*
 Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
 	"fmt"
+	"log/slog"
 
+	logger "github.com/mo3789530/chest/internal/pkg/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -26,8 +27,9 @@ to quickly create a Cobra application.`,
 }
 
 func init() {
+	logger.NewLogger()
+	slog.Info("test")
 	rootCmd.AddCommand(serverCmd)
-
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
